@@ -302,7 +302,7 @@ class SRAQueryEngine:
         mask = df['library_strategy'].str.contains('RNA-Seq', case=False, na=False)
         
         # Exclude single-cell using keywords from config
-        mask &= ~df['title'].str.lower().str.contains('|'.join(config.BULK_RNASEQ_EXCLUDE_KEYWORDS), na=False)
+        mask &= ~df['title'].str.lower().str.contains('|'.join(config.EXCLUDED_KEYWORDS), na=False)
         
         # Exclude low-quality runs (with safe value checks)
         mask &= df['read_length'].fillna(0) >= config.MIN_READ_LENGTH

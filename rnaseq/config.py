@@ -94,7 +94,7 @@ SRA_SEARCH_TERMS = {
 }
 
 # Exclude keywords for filtering out non-bulk RNA-seq studies
-BULK_RNASEQ_EXCLUDE_KEYWORDS = ['single cell', 'scRNA', '10x', 'droplet', 'microfluidic']
+EXCLUDED_KEYWORDS = ['single cell', 'Single-cell', 'scRNA-seq','scRNA', '10x', 'droplet', 'microfluidic']
 
 # GEO/SRA/ENA query parameters
 MAX_GEO_RECORDS = int(os.getenv("MAX_GEO_RECORDS", "5"))

@@ -292,7 +292,7 @@ class GEOQueryEngine:
             return df
         
         # Filter out single-cell studies using keywords from config
-        mask = ~df['title'].str.lower().str.contains('|'.join(config.BULK_RNASEQ_EXCLUDE_KEYWORDS), na=False)
+        mask = ~df['title'].str.lower().str.contains('|'.join(config.EXCLUDED_KEYWORDS), na=False)
         filtered_df = df[mask].copy()
         
         n_removed = len(df) - len(filtered_df)

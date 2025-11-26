@@ -229,7 +229,7 @@ class ENAQueryEngine:
         
         # Exclude single-cell using keywords from config
         if 'description' in df.columns:
-            mask &= ~df['description'].fillna('').astype(str).str.lower().str.contains('|'.join(config.BULK_RNASEQ_EXCLUDE_KEYWORDS), na=False)
+            mask &= ~df['description'].fillna('').astype(str).str.lower().str.contains('|'.join(config.EXCLUDED_KEYWORDS), na=False)
         
         # Exclude low-quality runs if columns exist
         # Convert read_count and base_count to numeric if they exist
