@@ -227,10 +227,9 @@ class ENAQueryEngine:
         if 'library_strategy' in df.columns:
             mask &= df['library_strategy'].fillna('').astype(str).str.contains('RNA-Seq', case=False, na=False)
         
-        # Exclude single-cell
+        # Exclude single-cell using keywords from config
         if 'description' in df.columns:
-            exclude_keywords = ['single cell', 'scRNA', '10x', 'droplet', 'microfluidic']
-            mask &= ~df['description'].fillna('').astype(str).str.lower().str.contains('|'.join(exclude_keywords), na=False)
+            mask &= ~df['description'].fillna('').astype(str).str.lower().str.contains('|'.join(config.BULK_RNASEQ_EXCLUDE_KEYWORDS), na=False)
         
         # Exclude low-quality runs if columns exist
         # Convert read_count and base_count to numeric if they exist

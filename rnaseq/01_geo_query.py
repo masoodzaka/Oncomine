@@ -291,10 +291,8 @@ class GEOQueryEngine:
             logger.warning("Input DataFrame is empty for bulk RNA-seq filtering")
             return df
         
-        # Filter out single-cell studies
-        exclude_keywords = ['single cell', 'scRNA', '10x', 'droplet', 'microfluidic']
-        
-        mask = ~df['title'].str.lower().str.contains('|'.join(exclude_keywords), na=False)
+        # Filter out single-cell studies using keywords from config
+        mask = ~df['title'].str.lower().str.contains('|'.join(config.BULK_RNASEQ_EXCLUDE_KEYWORDS), na=False)
         filtered_df = df[mask].copy()
         
         n_removed = len(df) - len(filtered_df)

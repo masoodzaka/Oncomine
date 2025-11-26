@@ -93,6 +93,9 @@ SRA_SEARCH_TERMS = {
     "ovarian": '(ovarian cancer) AND (RNA-seq) AND (homo sapiens) AND (ILLUMINA)',
 }
 
+# Exclude keywords for filtering out non-bulk RNA-seq studies
+BULK_RNASEQ_EXCLUDE_KEYWORDS = ['single cell', 'scRNA', '10x', 'droplet', 'microfluidic']
+
 # GEO/SRA/ENA query parameters
 MAX_GEO_RECORDS = int(os.getenv("MAX_GEO_RECORDS", "5"))
 MAX_SRA_RECORDS = int(os.getenv("MAX_SRA_RECORDS", "5"))
