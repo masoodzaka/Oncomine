@@ -55,29 +55,82 @@ chmod +x *.py *.sh
 # Add your NCBI API key to scripts for higher rate limits
 ```
 
+## Configuration Management
+
+### Centralized Configuration (`config.py`)
+
+All pipeline parameters, thresholds, and search terms are managed in a single `config.py` file. This provides:
+
+- **Environment Variable Support**: Override settings without editing code
+- **Unified Query Terms**: Centralized database search queries
+- **Consistent Filtering**: Standardized exclusion keywords across all databases
+- **Easy Customization**: Change thresholds and parameters in one place
+
+#### Key Configuration Parameters
+
+**Cancer Type Search Terms**:
+```python
+CANCER_TYPES = {
+    "breast": ["breast cancer", "brca", "mammary cancer"],
+    "lung": ["lung cancer", "luad", "lusc", "nsclc", "sclc"],
+    "colorectal": ["colorectal cancer", "crc", "colon cancer", "rectal cancer"],
+    "prostate": ["prostate cancer"],
+    "melanoma": ["melanoma", "skin cancer"],
+    "pancreatic": ["pancreatic cancer"],
+    "ovarian": ["ovarian cancer"],
+}
+```
+
+**Database-Specific Search Terms**:
+- `GEO_SEARCH_TERMS`: Optimized queries for Gene Expression Omnibus
+- `SRA_SEARCH_TERMS`: Optimized queries for Sequence Read Archive
+- `EXCLUDED_KEYWORDS`: Keywords for filtering single-cell and non-bulk studies
+
+**Query Limits** (configurable via environment variables):
+```bash
+export MAX_GEO_RECORDS=5          # Maximum GEO datasets per cancer type
+export MAX_SRA_RECORDS=5          # Maximum SRA experiments per cancer type
+export MAX_ENA_RECORDS=5          # Maximum ENA runs per cancer type
+```
+
+**Quality Control Thresholds**:
+```python
+MIN_READ_LENGTH = 50              # Minimum read length (bp)
+MIN_READS_PER_SAMPLE = 100000     # Minimum reads per sample
+MIN_COMPLEXITY_SCORE = 0.7        # Library complexity threshold
+MAX_DUPLICATION_RATE = 0.20       # Maximum duplication rate (20%)
+```
+
+---
+
 ## Pipeline Architecture
 
 ### Phase 1: Database Query & Metadata Extraction
 **Scripts**: `01_geo_query.py`, `02_sra_query.py`, `03_ena_query.py`
 
-Queries three major public databases for bulk RNA-seq cancer datasets:
+Queries three major public databases for bulk RNA-seq cancer datasets using search terms from `config.py`:
 
 - **GEO (Gene Expression Omnibus)**
-  - Searches for GSE datasets with RNA-seq data
+  - Searches for GSE datasets with RNA-seq data using `GEO_SEARCH_TERMS`
   - Extracts sample metadata and platform information
-  - Filters for bulk RNA-seq (excludes single-cell)
+  - Filters for bulk RNA-seq using `EXCLUDED_KEYWORDS`
 
 - **SRA (Sequence Read Archive)**
-  - Queries for RNA-seq experiments via NCBI Entrez API
+  - Queries for RNA-seq experiments using `SRA_SEARCH_TERMS`
   - Extracts run information, read lengths, and base counts
   - Filters for Illumina platform, ≥50bp reads, ≥1GB data
 
 - **ENA (European Nucleotide Archive)**
-  - REST API queries for RNA-seq studies
+  - REST API queries for RNA-seq studies with cancer type classification
   - Retrieves run-level metadata with read statistics
   - Filters for quality thresholds (≥20M reads, ≥50bp)
 
-**Output Files**:
+**Centralized Features**:
+- All three scripts use `CANCER_TYPES` from config for consistent categorization
+- Search queries managed in config for easy updates without code changes
+- Exclude keywords (`EXCLUDED_KEYWORDS`) applied consistently across all databases
+
+**Output Files** (saved to `output/data/`):
 - `geo_datasets.csv` - GEO dataset metadata
 - `sra_experiments.csv` - SRA experiment metadata
 - `ena_runs.csv` - ENA run metadata
@@ -87,13 +140,14 @@ Queries three major public databases for bulk RNA-seq cancer datasets:
 
 Merges metadata from all three databases into unified format:
 
-- Standardizes field names and data types
+- Standardizes field names and data types across all sources
+- Automatically loads metadata from `output/data/` directory (configured in `config.py`)
 - Detects and flags potential duplicate samples
 - Adds quality control flags
-- Stratifies samples by cancer type and subtype
+- Stratifies samples by cancer type using consistent `CANCER_TYPES` from config
 - Classifies sequencing type (paired-end vs single-end)
 
-**Output Files**:
+**Output Files** (saved to `output/data/`):
 - `consolidated_metadata.csv` - Master metadata file
 - `duplicate_report.txt` - Identified duplicate samples
 - `consolidation_summary.txt` - Summary statistics
@@ -158,19 +212,45 @@ Comprehensive quality assessment of all FASTQ files:
 ### Quick Start
 
 ```bash
-# Run complete pipeline
+# Run complete pipeline (requires NCBI_EMAIL and NCBI_API_KEY environment variables)
+export NCBI_EMAIL="your.email@example.com"
+export NCBI_API_KEY="your_api_key"
 bash 00_master_orchestrator.sh
 
 # Run with specific options
-bash 00_master_orchestrator.sh skip-query      # Skip database queries
-bash 00_master_orchestrator.sh skip-download   # Skip downloads
-bash 00_master_orchestrator.sh skip-qc         # Skip QC analysis
+bash 00_master_orchestrator.sh --skip-query      # Skip database queries
+bash 00_master_orchestrator.sh --skip-download   # Skip downloads
+bash 00_master_orchestrator.sh --skip-qc         # Skip QC analysis
+bash 00_master_orchestrator.sh --skip-advanced   # Skip advanced analysis
+```
+
+### Customizing Configuration
+
+All pipeline behavior is controlled through `config.py` and environment variables:
+
+```bash
+# Adjust record limits for database queries
+export MAX_GEO_RECORDS=10          # Increase from default 5
+export MAX_SRA_RECORDS=10
+export MAX_ENA_RECORDS=10
+
+# Adjust quality thresholds
+export MIN_READ_LENGTH=100         # Increase from default 50
+export MAX_DUPLICATION_RATE=0.3    # Increase from default 0.20
+
+# Adjust performance settings
+export MAX_PARALLEL_DOWNLOADS=8    # Increase from default 4
+export FASTQC_THREADS=8            # Increase from default 4
+
+# Run pipeline with custom settings
+bash 00_master_orchestrator.sh
 ```
 
 ### Individual Phase Execution
 
 ```bash
-# Phase 1: Query databases
+# Phase 1: Query databases (with custom record limits)
+export MAX_GEO_RECORDS=20
 python3 01_geo_query.py
 python3 02_sra_query.py
 python3 03_ena_query.py
@@ -183,27 +263,80 @@ python3 05_download_orchestrator.py
 
 # Phase 4: Quality control
 python3 06_fastqc_quality_control.py
+
+# Phase 5: Advanced analysis
+python3 07_contamination_screening.py
+python3 08_strand_specificity_detection.py
+python3 09_library_complexity_metrics.py
 ```
 
-### Configuration
+### Modifying Search Terms and Filters
 
-Edit script parameters for your needs:
+To customize which studies are retrieved and filtered:
+
+**Edit `config.py`** to modify:
 
 ```python
-# In 05_download_orchestrator.py
-orchestrator = FASTQDownloadOrchestrator(
-    metadata_file='consolidated_metadata.csv',
-    output_dir='fastq_downloads',
-    max_workers=4  # Adjust based on system resources
-)
+# Add new cancer types or keywords
+CANCER_TYPES = {
+    "breast": ["breast cancer", "brca", "mammary cancer"],
+    # ... add more cancer types
+}
 
-# In 06_fastqc_quality_control.py
-qc = FastQCQualityControl(
-    fastq_dir='fastq_downloads',
-    output_dir='qc_reports',
-    max_workers=4  # Parallel FastQC jobs
-)
+# Customize GEO search queries
+GEO_SEARCH_TERMS = {
+    "breast": "(your custom search terms)",
+    # ... customize per cancer type
+}
+
+# Customize SRA search queries
+SRA_SEARCH_TERMS = {
+    "breast": "(your custom search terms)",
+    # ... customize per cancer type
+}
+
+# Modify exclusion keywords (filters out single-cell, etc.)
+EXCLUDED_KEYWORDS = ['single cell', 'your keywords', '10x', ...]
 ```
+
+After editing `config.py`, all scripts will automatically use the new settings on the next run.
+
+## Output Directory Structure
+
+All pipeline outputs are organized hierarchically under `output/` directory (configured in `config.py`):
+
+```
+output/
+├── data/                                    # All CSV metadata files
+│   ├── geo_datasets.csv                    # GEO query results
+│   ├── sra_experiments.csv                 # SRA query results
+│   ├── ena_runs.csv                        # ENA query results
+│   ├── consolidated_metadata.csv           # Master metadata
+│   └── duplicate_report.txt                # Duplicate detection results
+│
+├── logs/                                    # Pipeline execution logs
+│   ├── master_orchestration_*.log          # Main orchestrator log
+│   ├── geo_query.log
+│   ├── sra_query.log
+│   ├── ena_query.log
+│   └── ...
+│
+└── results/                                 # Analysis results
+    ├── qc_reports/                         # Quality control reports
+    ├── contamination_reports/              # Contamination screening results
+    ├── strand_reports/                     # Strand specificity analysis
+    └── complexity_reports/                 # Library complexity metrics
+```
+
+**Key Configuration** (in `config.py`):
+```python
+OUTPUT_DIR = Path(os.getenv("OUTPUT_DIR", "./output"))
+LOG_DIR = OUTPUT_DIR / "logs"
+DATA_DIR = OUTPUT_DIR / "data"              # Where query results are saved
+RESULTS_DIR = OUTPUT_DIR / "results"        # Where analysis results go
+```
+
+---
 
 ## Output Files & Interpretation
 
@@ -212,7 +345,7 @@ qc = FastQCQualityControl(
 **consolidated_metadata.csv**
 - `accession`: Database accession ID
 - `database`: Source database (GEO/SRA/ENA)
-- `cancer_type`: Cancer indication
+- `cancer_type`: Cancer indication (from `CANCER_TYPES` config)
 - `sequencing_type`: paired-end or single-end
 - `read_length`: Average read length
 - `base_count`: Total bases in sample
