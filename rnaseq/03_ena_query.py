@@ -2,6 +2,7 @@
 """
 ENA Database Query for Bulk RNA-seq Cancer Datasets
 Queries European Nucleotide Archive for RNA-seq studies across cancer types
+Updated
 """
 
 import requests
@@ -42,6 +43,7 @@ class ENAQueryEngine:
     def search_ena(self, cancer_type: str, max_results: int = 100) -> List[Dict]:
         """Search ENA for studies matching cancer type"""
         logger.info(f"Searching ENA for {cancer_type} studies...")
+        # add cancer types for iteration
         
         query = self.build_ena_query(cancer_type)
         
