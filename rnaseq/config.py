@@ -66,9 +66,9 @@ KMER_COMPLEXITY_THRESHOLD = float(os.getenv("KMER_COMPLEXITY_THRESHOLD", "0.7"))
 # ===== QUERY CONFIGURATION =====
 # Cancer types and search terms
 CANCER_TYPES = {
-    "breast": ["breast cancer", "brca"],
-    "lung": ["lung cancer", "luad", "lusc"],
-    "colorectal": ["colorectal cancer", "crc", "colon cancer"],
+    "breast": ["breast cancer", "brca", "mammary cancer"],
+    "lung": ["lung cancer", "luad", "lusc", "nsclc", "sclc"],
+    "colorectal": ["colorectal cancer", "crc", "colon cancer", "rectal cancer"],
     "prostate": ["prostate cancer"],
     "melanoma": ["melanoma", "skin cancer"],
     "pancreatic": ["pancreatic cancer"],

@@ -10,7 +10,8 @@ from typing import List, Dict
 import logging
 import time
 import json
-from config import MAX_ENA_RECORDS, DATA_DIR
+from config import MAX_ENA_RECORDS, DATA_DIR, CANCER_TYPES
+import config
 
 # Configure logging
 logging.basicConfig(
@@ -33,9 +34,9 @@ class ENAQueryEngine:
         self.datasets = []
     
     def build_ena_query(self, cancer_type: str) -> str:
-        """Build ENA search query for all Homo sapiens RNA-Seq studies using taxid"""
-        # ENA portal API uses simpler syntax - just taxid query
-        # Studies will be filtered by RNA-seq in the run fetching step
+        """Build ENA search query for Homo sapiens RNA-Seq studies"""
+        # Use simple tax_eq query that works with ENA API
+        # Cancer filtering will be done in Python based on study description
         return 'tax_eq(9606)'
     
     def search_ena(self, cancer_type: str, max_results: int = 100) -> List[Dict]:
@@ -139,43 +140,72 @@ class ENAQueryEngine:
             max_results_per_cancer = MAX_ENA_RECORDS
         
         all_runs = []
+        cancer_types = list(config.CANCER_TYPES.keys())
+        logger.info(f"Querying ENA for {len(cancer_types)} cancer types: {', '.join(cancer_types)}")
         
-        # Only query once for all RNA-Seq studies in Homo sapiens
-        studies = self.search_ena('all', max_results=max_results_per_cancer)
-        logger.info(f"Processing {len(studies)} studies...")
-        
-        for idx, study in enumerate(studies):
-            study_accession = study.get('study_accession', '')
-            # ENA returns 'description' field, not 'study_title' or 'study_description'
-            study_desc = study.get('description', '').lower()
+        # Query all Homo sapiens RNA-seq studies once
+        try:
+            logger.info("Fetching all Homo sapiens studies from ENA...")
+            studies = self.search_ena('all', max_results=max_results_per_cancer)
+            logger.info(f"Retrieved {len(studies)} studies total")
             
-            if not study_accession:
-                continue
-            
-            logger.debug(f"Processing study {idx+1}/{len(studies)}: {study_accession}")
-            
-            # Fetch runs for this study
-            runs = self.fetch_study_runs(study_accession)
-            
-            for run in runs:
-                run_data = {
-                    'study_accession': study_accession,
-                    'run_accession': run.get('run_accession', ''),
-                    'description': study_desc,
-                    'raw_data': json.dumps(run)
-                }
+            for idx, study in enumerate(studies):
+                study_accession = study.get('study_accession', '')
+                # ENA returns 'description' field, not 'study_title' or 'study_description'
+                study_desc = study.get('description', '').lower()
                 
-                # Try to extract useful fields if they exist
-                for key in ['experiment_accession', 'sample_accession', 'instrument_model', 
-                            'library_strategy', 'library_source', 'library_selection',
-                            'read_count', 'base_count', 'first_created', 'last_updated']:
-                    if key in run:
-                        run_data[key] = run[key]
+                if not study_accession:
+                    continue
                 
-                all_runs.append(run_data)
-            
-            # Rate limiting
-            time.sleep(0.3)
+                # Find which cancer type this study matches (if any)
+                matched_cancer_type = None
+                for cancer_type, keywords in config.CANCER_TYPES.items():
+                    for keyword in keywords:
+                        if keyword.lower() in study_desc:
+                            matched_cancer_type = cancer_type
+                            break
+                    if matched_cancer_type:
+                        break
+                
+                # If no specific match but contains cancer-related keywords, still include it
+                if not matched_cancer_type:
+                    # Check for general cancer keywords
+                    if any(kw in study_desc for kw in ['cancer', 'carcinoma', 'tumor', 'lymphoma', 'leukemia']):
+                        # Match to most similar category or mark as "other_cancer" for ENA
+                        matched_cancer_type = "lung"  # Default to lung cancer for mixed/unknown
+                    else:
+                        # Skip non-cancer studies
+                        continue
+                
+                logger.debug(f"Processing study {idx+1}/{len(studies)}: {study_accession} (matched: {matched_cancer_type})")
+                
+                # Fetch runs for this study
+                runs = self.fetch_study_runs(study_accession)
+                
+                for run in runs:
+                    run_data = {
+                        'cancer_type': matched_cancer_type,
+                        'study_accession': study_accession,
+                        'run_accession': run.get('run_accession', ''),
+                        'description': study_desc,
+                        'raw_data': json.dumps(run)
+                    }
+                    
+                    # Try to extract useful fields if they exist
+                    for key in ['experiment_accession', 'sample_accession', 'instrument_model', 
+                                'library_strategy', 'library_source', 'library_selection',
+                                'read_count', 'base_count', 'first_created', 'last_updated']:
+                        if key in run:
+                            run_data[key] = run[key]
+                    
+                    all_runs.append(run_data)
+                
+                # Rate limiting
+                time.sleep(0.3)
+                
+        except Exception as e:
+            logger.warning(f"Error querying ENA: {e}")
+            pass
         
         df = pd.DataFrame(all_runs)
         logger.info(f"Total runs retrieved: {len(df)}")

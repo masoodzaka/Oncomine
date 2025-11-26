@@ -33,29 +33,37 @@ class MetadataConsolidator:
         self.consolidated_df = None
         self.duplicates = []
     
-    def load_database_results(self, geo_file: str = 'geo_datasets.csv',
-                             sra_file: str = 'sra_experiments.csv',
-                             ena_file: str = 'ena_runs.csv') -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    def load_database_results(self, geo_file: str = None,
+                             sra_file: str = None,
+                             ena_file: str = None) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Load results from all three databases"""
         logger.info("Loading database results...")
         
+        # Use DATA_DIR paths by default
+        if geo_file is None:
+            geo_file = str(DATA_DIR / 'geo_datasets.csv')
+        if sra_file is None:
+            sra_file = str(DATA_DIR / 'sra_experiments.csv')
+        if ena_file is None:
+            ena_file = str(DATA_DIR / 'ena_runs.csv')
+        
         try:
             self.geo_df = pd.read_csv(geo_file)
-            logger.info(f"Loaded {len(self.geo_df)} GEO datasets")
+            logger.info(f"Loaded {len(self.geo_df)} GEO datasets from {geo_file}")
         except FileNotFoundError:
             logger.warning(f"GEO file not found: {geo_file}")
             self.geo_df = pd.DataFrame()
         
         try:
             self.sra_df = pd.read_csv(sra_file)
-            logger.info(f"Loaded {len(self.sra_df)} SRA experiments")
+            logger.info(f"Loaded {len(self.sra_df)} SRA experiments from {sra_file}")
         except FileNotFoundError:
             logger.warning(f"SRA file not found: {sra_file}")
             self.sra_df = pd.DataFrame()
         
         try:
             self.ena_df = pd.read_csv(ena_file)
-            logger.info(f"Loaded {len(self.ena_df)} ENA runs")
+            logger.info(f"Loaded {len(self.ena_df)} ENA runs from {ena_file}")
         except FileNotFoundError:
             logger.warning(f"ENA file not found: {ena_file}")
             self.ena_df = pd.DataFrame()
