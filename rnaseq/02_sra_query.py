@@ -55,20 +55,12 @@ class SRAQueryEngine:
         Returns:
             Query string for SRA search
         """
-        # Use standardized cancer types from config
-        cancer_search_terms = {
-            'breast': '(breast cancer) AND (RNA-seq) AND (homo sapiens) AND (ILLUMINA)',
-            'colorectal': '(colorectal cancer OR colon cancer OR COAD) AND (RNA-seq) AND (homo sapiens) AND (ILLUMINA)',
-            'lung': '(lung cancer OR LUAD OR LUSC) AND (RNA-seq) AND (homo sapiens) AND (ILLUMINA)',
-            'pancreatic': '(pancreatic cancer) AND (RNA-seq) AND (homo sapiens) AND (ILLUMINA)',
-            'ovarian': '(ovarian cancer) AND (RNA-seq) AND (homo sapiens) AND (ILLUMINA)',
-        }
-        
-        query = cancer_search_terms.get(cancer_type)
+        # Use search terms from config
+        query = config.SRA_SEARCH_TERMS.get(cancer_type)
         if not query:
             raise ValueError(
                 f"Unknown cancer type: {cancer_type}. "
-                f"Supported types: {list(cancer_search_terms.keys())}"
+                f"Supported types: {list(config.SRA_SEARCH_TERMS.keys())}"
             )
         return query
     

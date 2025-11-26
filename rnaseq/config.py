@@ -75,6 +75,24 @@ CANCER_TYPES = {
     "ovarian": ["ovarian cancer"],
 }
 
+# GEO database search query terms for each cancer type
+GEO_SEARCH_TERMS = {
+    "breast": '(breast cancer) AND (RNA-seq OR "RNA seq") AND (homo sapiens) AND (GSE)',
+    "colorectal": '(colorectal cancer OR colon cancer OR COAD) AND (RNA-seq OR "RNA seq") AND (homo sapiens) AND (GSE)',
+    "lung": '(lung cancer OR LUAD OR LUSC) AND (RNA-seq OR "RNA seq") AND (homo sapiens) AND (GSE)',
+    "pancreatic": '(pancreatic cancer) AND (RNA-seq OR "RNA seq") AND (homo sapiens) AND (GSE)',
+    "ovarian": '(ovarian cancer) AND (RNA-seq OR "RNA seq") AND (homo sapiens) AND (GSE)',
+}
+
+# SRA database search query terms for each cancer type
+SRA_SEARCH_TERMS = {
+    "breast": '(breast cancer) AND (RNA-seq) AND (homo sapiens) AND (ILLUMINA)',
+    "colorectal": '(colorectal cancer OR colon cancer OR COAD) AND (RNA-seq) AND (homo sapiens) AND (ILLUMINA)',
+    "lung": '(lung cancer OR LUAD OR LUSC) AND (RNA-seq) AND (homo sapiens) AND (ILLUMINA)',
+    "pancreatic": '(pancreatic cancer) AND (RNA-seq) AND (homo sapiens) AND (ILLUMINA)',
+    "ovarian": '(ovarian cancer) AND (RNA-seq) AND (homo sapiens) AND (ILLUMINA)',
+}
+
 # GEO/SRA/ENA query parameters
 MAX_GEO_RECORDS = int(os.getenv("MAX_GEO_RECORDS", "5"))
 MAX_SRA_RECORDS = int(os.getenv("MAX_SRA_RECORDS", "5"))

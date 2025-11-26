@@ -53,20 +53,12 @@ class GEOQueryEngine:
         
     def build_search_query(self, cancer_type: str) -> str:
         """Build GEO search query for specific cancer type"""
-        # Use standardized cancer types from config
-        cancer_search_terms = {
-            'breast': '(breast cancer) AND (RNA-seq OR "RNA seq") AND (homo sapiens) AND (GSE)',
-            'colorectal': '(colorectal cancer OR colon cancer OR COAD) AND (RNA-seq OR "RNA seq") AND (homo sapiens) AND (GSE)',
-            'lung': '(lung cancer OR LUAD OR LUSC) AND (RNA-seq OR "RNA seq") AND (homo sapiens) AND (GSE)',
-            'pancreatic': '(pancreatic cancer) AND (RNA-seq OR "RNA seq") AND (homo sapiens) AND (GSE)',
-            'ovarian': '(ovarian cancer) AND (RNA-seq OR "RNA seq") AND (homo sapiens) AND (GSE)',
-        }
-        
-        query = cancer_search_terms.get(cancer_type)
+        # Use search terms from config
+        query = config.GEO_SEARCH_TERMS.get(cancer_type)
         if not query:
             raise ValueError(
                 f"Unknown cancer type: {cancer_type}. "
-                f"Supported types: {list(cancer_search_terms.keys())}"
+                f"Supported types: {list(config.GEO_SEARCH_TERMS.keys())}"
             )
         return query
     
