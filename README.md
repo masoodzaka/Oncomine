@@ -38,7 +38,7 @@ pip install pandas numpy requests
 
 ```bash
 # 1. Clone or download the pipeline
-cd cancer_rnaseq_curation
+cd rnaseq
 
 # 2. Create conda environment
 conda create -n rnaseq-curation python=3.11
@@ -350,7 +350,7 @@ for i in range(0, len(fastq_files), batch_size):
 ### Directory Structure
 ```
 project_root/
-├── cancer_rnaseq_curation/
+├── rnaseq/
 │   ├── *.py (scripts)
 │   ├── *.sh (orchestrators)
 │   └── README.md
