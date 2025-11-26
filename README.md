@@ -554,5 +554,5 @@ This pipeline is provided as-is for research purposes. For issues or questions:
 ---
 
 **Last Updated**: November 24, 2025
-**Maintainer**: Bioinformatics Team
+**Maintainer**: Masood Zaka
 **Status**: Production Ready
